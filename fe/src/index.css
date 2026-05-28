@@ -1,0 +1,112 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-gray-100 font-sans text-navy;
+    min-height: 100dvh;
+  }
+}
+
+@layer components {
+  /* Mobile shell — max 480px centered */
+  .app-shell {
+    @apply mx-auto w-full max-w-[480px] min-h-screen bg-white flex flex-col relative overflow-hidden;
+    box-shadow: 0 0 60px rgba(0,0,0,0.12);
+  }
+
+  /* Low poly header background */
+  .poly-header {
+    @apply bg-navy relative overflow-hidden;
+  }
+
+  .poly-header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      polygon(0 0, 60% 0, 40% 100%, 0 100%),
+      polygon(55% 0, 100% 0, 100% 70%, 80% 100%, 55% 0);
+    background-color: transparent;
+    opacity: 0.08;
+  }
+
+  .poly-bg {
+    background-color: #0D1B2A;
+    background-image:
+      linear-gradient(135deg, #1A2F4A 25%, transparent 25%),
+      linear-gradient(225deg, #122233 25%, transparent 25%),
+      linear-gradient(315deg, #1A2F4A 25%, transparent 25%),
+      linear-gradient(45deg, #122233 25%, transparent 25%);
+    background-size: 60px 60px;
+    background-position: 0 0, 30px 0, 30px -30px, 0 30px;
+  }
+
+  /* Buttons */
+  .btn-primary {
+    @apply w-full min-h-[48px] bg-gold text-navy font-semibold text-base rounded-lg px-4
+           flex items-center justify-center transition-opacity active:opacity-80 disabled:opacity-50;
+  }
+
+  .btn-secondary {
+    @apply w-full min-h-[48px] border-2 border-navy text-navy font-semibold text-base rounded-lg px-4
+           flex items-center justify-center transition-opacity active:opacity-80;
+  }
+
+  .btn-danger {
+    @apply min-h-[40px] bg-red-600 text-white font-semibold text-sm rounded-lg px-4
+           flex items-center justify-center transition-opacity active:opacity-80;
+  }
+
+  .btn-approve {
+    @apply min-h-[40px] bg-navy text-white font-semibold text-sm rounded-lg px-4
+           flex items-center justify-center transition-opacity active:opacity-80;
+  }
+
+  .btn-reject {
+    @apply min-h-[40px] border-2 border-red-500 text-red-500 font-semibold text-sm rounded-lg px-4
+           flex items-center justify-center transition-opacity active:opacity-80;
+  }
+
+  /* Form inputs */
+  .input-field {
+    @apply w-full min-h-[48px] border-2 border-gray-200 rounded-lg px-4 text-base text-navy
+           focus:outline-none focus:border-navy transition-colors bg-white;
+  }
+
+  .input-label {
+    @apply block text-sm font-semibold text-navy mb-1.5 uppercase tracking-wide;
+  }
+
+  /* Cards */
+  .card {
+    @apply bg-white rounded-xl border border-gray-100 p-4;
+  }
+
+  /* Status badges */
+  .badge-pending {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800;
+  }
+
+  .badge-approved {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800;
+  }
+
+  .badge-rejected {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800;
+  }
+
+  .badge-unpaid {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600;
+  }
+}
