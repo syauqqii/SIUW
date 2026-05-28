@@ -1,5 +1,4 @@
 const bcrypt = require('bcryptjs');
-const { v4: uuidv4 } = require('uuid');
 const db = require('../config/db');
 const sheets = require('../config/sheets');
 
@@ -43,7 +42,7 @@ async function createWarga(req, res) {
     const userId = result.lastInsertRowid;
 
     await sheets.wargaCreate({
-      id: uuidv4(),
+      id: crypto.randomUUID(),
       user_id: String(userId),
       name,
       house_no,

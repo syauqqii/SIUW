@@ -1,6 +1,16 @@
-const { v4: uuidv4 } = require('uuid');
 const db = require('../config/db');
 const sheets = require('../config/sheets');
+const cloudinary = require('../config/cloudinary');
+
+function uploadToCloudinary(buffer) {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder: 'siuw/receipts', transformation: [{ quality: 'auto', fetch_format: 'auto' }] },
+      (err, result) => (err ? reject(err) : resolve(result))
+    );
+    stream.end(buffer);
+  });
+}
 
 async function getPayments(req, res) {
   try {
@@ -8,7 +18,6 @@ async function getPayments(req, res) {
       const all = await sheets.paymentGetAll();
       return res.json(all);
     }
-
     const payments = await sheets.paymentGetByUserId(req.user.id);
     res.json(payments);
   } catch (err) {
@@ -64,7 +73,6 @@ async function getPendingApprovals(req, res) {
     const all = await sheets.paymentGetAll();
     const pending = all.filter((p) => p.status === 'pending');
 
-    // Enrich with warga name from Warga Info sheet
     const wargaRows = await sheets.wargaGetAll();
     const enriched = pending.map((p) => {
       const info = wargaRows.find((w) => w.user_id === String(p.user_id)) || {};
@@ -95,23 +103,23 @@ async function createPayment(req, res) {
       return res.status(409).json({ error: 'Payment for this month already submitted' });
     }
 
-    const now = new Date().toISOString();
-    const paymentId = uuidv4();
+    const uploaded = await uploadToCloudinary(req.file.buffer);
 
+    const now = new Date().toISOString();
     const paymentData = {
-      id: paymentId,
+      id: crypto.randomUUID(),
       user_id: String(userId),
       month: String(month),
       year: String(year),
       amount: String(amount),
-      image_url: req.file.path,
+      image_url: uploaded.secure_url,
       status: 'pending',
       created_at: now,
       updated_at: now,
     };
 
     await sheets.paymentCreate(paymentData);
-    await updateSummary(paymentId, paymentData);
+    await updateSummary(paymentData);
 
     res.status(201).json(paymentData);
   } catch (err) {
@@ -134,7 +142,7 @@ async function updatePaymentStatus(req, res) {
       updated_at: new Date().toISOString(),
     });
 
-    await updateSummary(id, updated);
+    await updateSummary(updated);
     res.json(updated);
   } catch (err) {
     console.error('updatePaymentStatus error:', err);
@@ -166,13 +174,12 @@ async function manualPaymentStatus(req, res) {
           amount: String(amount || existing.amount || 0),
           updated_at: now,
         });
-        await updateSummary(existing.id, updated);
+        await updateSummary(updated);
         return res.json(updated);
       }
 
-      const paymentId = uuidv4();
       const paymentData = {
-        id: paymentId,
+        id: crypto.randomUUID(),
         user_id: String(user_id),
         month: String(month),
         year: String(year),
@@ -183,7 +190,7 @@ async function manualPaymentStatus(req, res) {
         updated_at: now,
       };
       await sheets.paymentCreate(paymentData);
-      await updateSummary(paymentId, paymentData);
+      await updateSummary(paymentData);
       return res.status(201).json(paymentData);
     }
 
@@ -193,7 +200,7 @@ async function manualPaymentStatus(req, res) {
         status: 'rejected',
         updated_at: now,
       });
-      await updateSummary(existing.id, updated);
+      await updateSummary(updated);
       return res.json(updated);
     }
 
@@ -204,7 +211,7 @@ async function manualPaymentStatus(req, res) {
   }
 }
 
-async function updateSummary(paymentId, paymentData) {
+async function updateSummary(paymentData) {
   try {
     const wargaRows = await sheets.wargaGetAll();
     const info = wargaRows.find((w) => w.user_id === String(paymentData.user_id)) || {};
