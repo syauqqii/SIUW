@@ -1,4 +1,4 @@
-# SIUW — Panduan Setup Lengkap
+# SIUW - Panduan Setup Lengkap
 
 Panduan ini ditulis untuk pemula. Ikuti langkah demi langkah dari atas ke bawah.
 
@@ -27,7 +27,7 @@ Node.js adalah runtime yang dibutuhkan untuk menjalankan backend.
 - [Windows (64-bit)](https://nodejs.org/dist/v24.16.0/node-v24.16.0-x64.msi)
 - [macOS (Apple Silicon / M1-M4)](https://nodejs.org/dist/v24.16.0/node-v24.16.0-arm64.pkg)
 - [macOS (Intel)](https://nodejs.org/dist/v24.16.0/node-v24.16.0-x64.pkg)
-- [Linux](https://nodejs.org/en/download) — pilih versi LTS
+- [Linux](https://nodejs.org/en/download) - pilih versi LTS
 
 **Cara install (Windows):**
 1. Buka file `.msi` yang sudah didownload
@@ -63,7 +63,7 @@ Google Sheet digunakan sebagai database operasional (data warga, pembayaran, dan
    ```
    https://docs.google.com/spreadsheets/d/XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX/edit
    ```
-5. Salin bagian `XXXXXXX...` di tengah URL tersebut — itulah **Sheet ID** Anda. Simpan, akan dipakai nanti.
+5. Salin bagian `XXXXXXX...` di tengah URL tersebut - itulah **Sheet ID** Anda. Simpan, akan dipakai nanti.
 
 > Tab-tab di dalam sheet (`Warga Info`, `Payments`, `Payment Summary`) akan **dibuat otomatis** oleh sistem saat pertama kali dijalankan. Anda tidak perlu membuat apapun di dalam sheet.
 
@@ -133,9 +133,9 @@ Cloudinary digunakan untuk menyimpan foto bukti pembayaran.
 3. Pilih menu **API Keys**
    - Atau akses langsung: [console.cloudinary.com/app/settings/api-keys](https://console.cloudinary.com/app/settings/api-keys)
 4. Di halaman tersebut, salin tiga nilai ini:
-   - `Cloud Name` — tertera di bagian atas halaman
-   - `API Key` — angka panjang
-   - `API Secret` — klik ikon mata untuk menampilkannya
+   - `Cloud Name` - tertera di bagian atas halaman
+   - `API Key` - angka panjang
+   - `API Secret` - klik ikon mata untuk menampilkannya
 
 > **Catatan:** Dashboard utama Cloudinary hanya menampilkan Cloud Name saja. API Key dan API Secret hanya tersedia di halaman **Settings → API Keys**.
 
@@ -155,7 +155,7 @@ File `.env` adalah file konfigurasi rahasia yang menyimpan semua kredensial.
 PORT=3001
 FRONTEND_URL=http://localhost:5173
 
-# JWT — ganti dengan teks acak panjang, bebas apa saja
+# JWT - ganti dengan teks acak panjang, bebas apa saja
 JWT_SECRET=isi_teks_acak_minimal_32_karakter_contoh_abc123xyz789
 
 # Google Sheets
@@ -246,7 +246,7 @@ Buka browser dan akses: **http://localhost:5173**
 
 ## Catatan Tambahan
 
-### Google Sheets — Tab Otomatis
+### Google Sheets - Tab Otomatis
 
 Saat backend pertama kali berjalan dan terhubung ke Google Sheet, tiga tab berikut dibuat otomatis:
 

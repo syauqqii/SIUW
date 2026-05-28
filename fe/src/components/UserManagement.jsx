@@ -110,7 +110,7 @@ export default function UserManagement({ warga, loading, onRefresh }) {
             <div key={w.id} className="card">
               <div className="flex items-start justify-between mb-2">
                 <div>
-                  <p className="font-semibold text-navy text-base">{w.name || '—'}</p>
+                  <p className="font-semibold text-navy text-base">{w.name || '-'}</p>
                   <p className="text-gray-500 text-sm">No. {w.house_no} &middot; {w.phone}</p>
                 </div>
               </div>
@@ -167,7 +167,7 @@ export default function UserManagement({ warga, loading, onRefresh }) {
 
       {/* Manual status modal */}
       {showManual && (
-        <Modal title={`Status Pembayaran — ${showManual.name}`} onClose={() => setShowManual(null)}>
+        <Modal title={`Status Pembayaran - ${showManual.name}`} onClose={() => setShowManual(null)}>
           <form onSubmit={handleManualStatus} className="space-y-4">
             <div>
               <label className="input-label">Bulan</label>

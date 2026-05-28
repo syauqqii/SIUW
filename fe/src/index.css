@@ -19,7 +19,7 @@
 }
 
 @layer components {
-  /* Mobile shell — max 480px centered */
+  /* Mobile shell - max 480px centered */
   .app-shell {
     @apply mx-auto w-full max-w-[480px] min-h-screen bg-white flex flex-col relative overflow-hidden;
     box-shadow: 0 0 60px rgba(0,0,0,0.12);

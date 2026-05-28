@@ -60,7 +60,7 @@ export default function PaymentHistory({ payments, loading }) {
             >
               <p className="text-xs font-semibold">{label}</p>
               <p className="text-[10px] mt-0.5 leading-tight">
-                {isApproved ? 'Lunas' : isPending ? 'Proses' : isRejected ? 'Tolak' : '—'}
+                {isApproved ? 'Lunas' : isPending ? 'Proses' : isRejected ? 'Tolak' : '-'}
               </p>
             </div>
           );
