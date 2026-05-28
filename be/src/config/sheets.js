@@ -7,7 +7,7 @@ const SHEET_TITLES = {
   SUMMARY: 'Payment Summary',
 };
 
-// Sequential write queue to avoid race conditions
+// Sequential write queue to avoid race conditions on Sheets API
 class WriteQueue {
   constructor() {
     this._queue = [];
@@ -38,21 +38,28 @@ class WriteQueue {
 
 const writeQueue = new WriteQueue();
 
-let _doc = null;
+// Store the promise, not the instance — prevents concurrent requests from
+// returning an uninitialized doc before loadInfo() completes.
+let _docPromise = null;
 
 async function getDoc() {
-  if (_doc) return _doc;
-
-  const auth = new JWT({
-    email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-    key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-  });
-
-  _doc = new GoogleSpreadsheet(process.env.GOOGLE_SHEET_ID, auth);
-  await _doc.loadInfo();
-  await ensureSheets(_doc);
-  return _doc;
+  if (!_docPromise) {
+    _docPromise = (async () => {
+      const auth = new JWT({
+        email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+        key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+        scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+      });
+      const doc = new GoogleSpreadsheet(process.env.GOOGLE_SHEET_ID, auth);
+      await doc.loadInfo();
+      await ensureSheets(doc);
+      return doc;
+    })().catch((err) => {
+      _docPromise = null;
+      throw err;
+    });
+  }
+  return _docPromise;
 }
 
 async function ensureSheets(doc) {
@@ -85,18 +92,25 @@ async function getSheet(title) {
   return doc.sheetsByTitle[title];
 }
 
+// row._sheet was a private property removed in v5; use sheet.headerValues instead
+function rowToObj(row, headers) {
+  const obj = {};
+  headers.forEach((h) => { obj[h] = row.get(h); });
+  return obj;
+}
+
 // Warga Info operations
 async function wargaGetAll() {
   const sheet = await getSheet(SHEET_TITLES.WARGA);
   const rows = await sheet.getRows();
-  return rows.map(rowToObj);
+  return rows.map((r) => rowToObj(r, sheet.headerValues));
 }
 
 async function wargaGetByUserId(userId) {
   const sheet = await getSheet(SHEET_TITLES.WARGA);
   const rows = await sheet.getRows();
   const row = rows.find((r) => r.get('user_id') === String(userId));
-  return row ? rowToObj(row) : null;
+  return row ? rowToObj(row, sheet.headerValues) : null;
 }
 
 async function wargaCreate(data) {
@@ -130,13 +144,15 @@ async function wargaDelete(userId) {
 async function paymentGetAll() {
   const sheet = await getSheet(SHEET_TITLES.PAYMENTS);
   const rows = await sheet.getRows();
-  return rows.map(rowToObj);
+  return rows.map((r) => rowToObj(r, sheet.headerValues));
 }
 
 async function paymentGetByUserId(userId) {
   const sheet = await getSheet(SHEET_TITLES.PAYMENTS);
   const rows = await sheet.getRows();
-  return rows.filter((r) => r.get('user_id') === String(userId)).map(rowToObj);
+  return rows
+    .filter((r) => r.get('user_id') === String(userId))
+    .map((r) => rowToObj(r, sheet.headerValues));
 }
 
 async function paymentCreate(data) {
@@ -154,7 +170,7 @@ async function paymentUpdate(paymentId, data) {
     if (!row) throw new Error('Payment not found');
     Object.entries(data).forEach(([k, v]) => row.set(k, v));
     await row.save();
-    return rowToObj(row);
+    return rowToObj(row, sheet.headerValues);
   });
 }
 
@@ -167,7 +183,7 @@ async function paymentFindByUserMonth(userId, month, year) {
       r.get('month') === String(month) &&
       r.get('year') === String(year)
   );
-  return row ? rowToObj(row) : null;
+  return row ? rowToObj(row, sheet.headerValues) : null;
 }
 
 // Payment Summary operations
@@ -194,16 +210,7 @@ async function summaryUpsert(key, data) {
 async function summaryGetAll() {
   const sheet = await getSheet(SHEET_TITLES.SUMMARY);
   const rows = await sheet.getRows();
-  return rows.map(rowToObj);
-}
-
-function rowToObj(row) {
-  const headers = row._sheet.headerValues;
-  const obj = {};
-  headers.forEach((h) => {
-    obj[h] = row.get(h);
-  });
-  return obj;
+  return rows.map((r) => rowToObj(r, sheet.headerValues));
 }
 
 module.exports = {

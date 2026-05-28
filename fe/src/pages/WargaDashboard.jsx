@@ -34,7 +34,7 @@ export default function WargaDashboard() {
     <div className="flex flex-col min-h-screen">
       {/* Header */}
       <div className="poly-bg px-6 pt-10 pb-8 relative overflow-hidden">
-        <svg className="absolute top-0 right-0 w-40 h-40 opacity-10" viewBox="0 0 160 160">
+        <svg className="absolute top-0 right-0 w-40 h-40 opacity-10 pointer-events-none" viewBox="0 0 160 160">
           <polygon points="160,0 160,160 0,0" fill="#C9973A" />
           <polygon points="160,60 160,160 60,160" fill="#D4AA5C" />
         </svg>
