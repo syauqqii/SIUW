@@ -11,6 +11,7 @@ export default function UserManagement({ warga, loading, onRefresh }) {
   const [manualForm, setManualForm] = useState({ month: new Date().getMonth() + 1, year: new Date().getFullYear(), status: 'paid', amount: '' });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
 
   function openAdd() {
     setEditTarget(null);
@@ -94,19 +95,65 @@ export default function UserManagement({ warga, loading, onRefresh }) {
     );
   }
 
+  const q = search.trim().toLowerCase();
+  const filtered = q
+    ? warga.filter(
+        (w) =>
+          (w.name || '').toLowerCase().includes(q) ||
+          (w.phone || '').includes(q) ||
+          (w.house_no || '').toLowerCase().includes(q)
+      )
+    : warga;
+
   return (
     <>
-      <button className="btn-primary mb-4" onClick={openAdd}>
+      <button className="btn-primary mb-3" onClick={openAdd}>
         Tambah Warga
       </button>
+
+      {/* Search */}
+      <div className="relative mb-4">
+        <svg
+          className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+          fill="none" stroke="currentColor" viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+            d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+        </svg>
+        <input
+          type="text"
+          className="input-field pl-10 pr-10"
+          placeholder="Cari nama, no. rumah, atau telepon..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        {search && (
+          <button
+            onClick={() => setSearch('')}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg leading-none"
+          >
+            &#x2715;
+          </button>
+        )}
+      </div>
 
       {!warga.length ? (
         <div className="card text-center py-8">
           <p className="text-gray-400">Belum ada data warga</p>
         </div>
+      ) : filtered.length === 0 ? (
+        <div className="card text-center py-8">
+          <p className="text-gray-400 text-sm">Tidak ada warga yang cocok dengan</p>
+          <p className="text-navy font-semibold mt-1">"{search}"</p>
+        </div>
       ) : (
         <div className="space-y-3">
-          {warga.map((w) => (
+          {q && (
+            <p className="text-xs text-gray-400 px-1">
+              {filtered.length} hasil untuk &ldquo;{search}&rdquo;
+            </p>
+          )}
+          {filtered.map((w) => (
             <div key={w.id} className="card">
               <div className="flex items-start justify-between mb-2">
                 <div>

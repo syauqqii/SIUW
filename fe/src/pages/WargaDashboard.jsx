@@ -78,7 +78,11 @@ export default function WargaDashboard() {
       {/* Content */}
       <div className="flex-1 px-4 py-5 overflow-y-auto">
         {tab === 'status' ? (
-          <PaymentHistory payments={payments} loading={loading} />
+          <PaymentHistory
+            payments={payments}
+            loading={loading}
+            onUploadRequest={() => setTab('upload')}
+          />
         ) : (
           <ReceiptUpload
             onSuccess={() => {

@@ -126,7 +126,7 @@ export default function Login() {
         </form>
 
         <p className="text-center text-gray-400 text-sm mt-8">
-          RT 01 / RW 03
+          Warga Desa Manggis
         </p>
       </div>
     </div>
