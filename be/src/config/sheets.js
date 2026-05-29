@@ -1,5 +1,13 @@
-const { GoogleSpreadsheet } = require('google-spreadsheet');
 const { JWT } = require('google-auth-library');
+
+let _GoogleSpreadsheet = null;
+async function getGoogleSpreadsheetClass() {
+  if (!_GoogleSpreadsheet) {
+    const mod = await import('google-spreadsheet');
+    _GoogleSpreadsheet = mod.GoogleSpreadsheet;
+  }
+  return _GoogleSpreadsheet;
+}
 
 const SHEET_TITLES = {
   WARGA: 'Warga Info',
@@ -42,6 +50,7 @@ let _docPromise = null;
 async function getDoc() {
   if (!_docPromise) {
     _docPromise = (async () => {
+      const GoogleSpreadsheet = await getGoogleSpreadsheetClass();
       const auth = new JWT({
         email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
         key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
