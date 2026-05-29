@@ -96,7 +96,7 @@ export default function Login() {
                 className="input-field"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                placeholder="08xxxxxxxxxx"
+                placeholder="628xxxxxxxxxx"
                 autoComplete="tel"
                 required
               />

@@ -195,7 +195,7 @@ export default function UserManagement({ warga, loading, onRefresh }) {
             </div>
             <div>
               <label className="input-label">Nomor Telepon</label>
-              <input className="input-field" type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} required={!editTarget} />
+              <input className="input-field" type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="628xxxxxxxxxx" required={!editTarget} />
             </div>
             <div>
               <label className="input-label">Nomor Rumah</label>

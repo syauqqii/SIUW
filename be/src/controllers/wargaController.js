@@ -1,4 +1,5 @@
 const sheets = require('../config/sheets');
+const { normalizePhone } = require('../utils/phone');
 
 async function getAllWarga(req, res) {
   try {
@@ -12,7 +13,8 @@ async function getAllWarga(req, res) {
 
 async function createWarga(req, res) {
   try {
-    const { name, phone, house_no } = req.body;
+    const { name, house_no } = req.body;
+    const phone = normalizePhone(req.body.phone || '');
 
     if (!name || !phone || !house_no) {
       return res.status(400).json({ error: 'name, phone, and house_no are required' });
@@ -45,7 +47,8 @@ async function createWarga(req, res) {
 async function updateWarga(req, res) {
   try {
     const { phone } = req.params;
-    const { name, phone: newPhone, house_no } = req.body;
+    const { name, house_no } = req.body;
+    const newPhone = req.body.phone ? normalizePhone(req.body.phone) : null;
 
     const existing = await sheets.wargaGetByPhone(phone);
     if (!existing) return res.status(404).json({ error: 'Warga not found' });

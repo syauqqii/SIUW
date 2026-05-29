@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const path = require('path');
 const sheets = require('../config/sheets');
+const { normalizePhone } = require('../utils/phone');
 
 const CREDS_PATH = path.join(__dirname, '../../creds.json');
 
@@ -52,7 +53,7 @@ async function login(req, res) {
       return res.status(400).json({ error: 'Phone required' });
     }
 
-    const warga = await sheets.wargaGetByPhone(phone);
+    const warga = await sheets.wargaGetByPhone(normalizePhone(phone));
     if (!warga) {
       return res.status(401).json({ error: 'Nomor telepon tidak terdaftar' });
     }
