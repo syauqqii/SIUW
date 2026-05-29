@@ -60,28 +60,27 @@ async function getDoc() {
 }
 
 async function ensureSheets(doc) {
-  const existing = Object.values(doc.sheetsByTitle).map((s) => s.title);
-
-  if (!existing.includes(SHEET_TITLES.WARGA)) {
-    await doc.addSheet({
-      title: SHEET_TITLES.WARGA,
-      headerValues: ['id', 'phone', 'name', 'house_no', 'created_at', 'updated_at'],
-    });
+  async function ensureSheet(title, headers) {
+    const sheet = doc.sheetsByTitle[title];
+    if (!sheet) {
+      await doc.addSheet({ title, headerValues: headers });
+      return;
+    }
+    // Tab sudah ada — pastikan header row terisi
+    try {
+      await sheet.loadHeaderRow();
+    } catch (_) {
+      await sheet.setHeaderRow(headers);
+      return;
+    }
+    if (!sheet.headerValues || sheet.headerValues.length === 0) {
+      await sheet.setHeaderRow(headers);
+    }
   }
 
-  if (!existing.includes(SHEET_TITLES.PAYMENTS)) {
-    await doc.addSheet({
-      title: SHEET_TITLES.PAYMENTS,
-      headerValues: ['id', 'phone', 'month', 'year', 'amount', 'image_url', 'status', 'created_at', 'updated_at'],
-    });
-  }
-
-  if (!existing.includes(SHEET_TITLES.SUMMARY)) {
-    await doc.addSheet({
-      title: SHEET_TITLES.SUMMARY,
-      headerValues: ['user_name', 'house_no', 'phone', 'month', 'year', 'amount', 'image_url', 'status'],
-    });
-  }
+  await ensureSheet(SHEET_TITLES.WARGA,    ['id', 'phone', 'name', 'house_no', 'created_at', 'updated_at']);
+  await ensureSheet(SHEET_TITLES.PAYMENTS, ['id', 'phone', 'month', 'year', 'amount', 'image_url', 'status', 'created_at', 'updated_at']);
+  await ensureSheet(SHEET_TITLES.SUMMARY,  ['user_name', 'house_no', 'phone', 'month', 'year', 'amount', 'image_url', 'status']);
 }
 
 async function getSheet(title) {
