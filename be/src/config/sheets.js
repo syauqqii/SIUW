@@ -7,7 +7,6 @@ const SHEET_TITLES = {
   SUMMARY: 'Payment Summary',
 };
 
-// Sequential write queue to avoid race conditions on Sheets API
 class WriteQueue {
   constructor() {
     this._queue = [];
@@ -38,8 +37,6 @@ class WriteQueue {
 
 const writeQueue = new WriteQueue();
 
-// Store the promise, not the instance — prevents concurrent requests from
-// returning an uninitialized doc before loadInfo() completes.
 let _docPromise = null;
 
 async function getDoc() {
@@ -68,14 +65,14 @@ async function ensureSheets(doc) {
   if (!existing.includes(SHEET_TITLES.WARGA)) {
     await doc.addSheet({
       title: SHEET_TITLES.WARGA,
-      headerValues: ['id', 'user_id', 'name', 'house_no', 'phone', 'created_at', 'updated_at'],
+      headerValues: ['id', 'phone', 'name', 'house_no', 'created_at', 'updated_at'],
     });
   }
 
   if (!existing.includes(SHEET_TITLES.PAYMENTS)) {
     await doc.addSheet({
       title: SHEET_TITLES.PAYMENTS,
-      headerValues: ['id', 'user_id', 'month', 'year', 'amount', 'image_url', 'status', 'created_at', 'updated_at'],
+      headerValues: ['id', 'phone', 'month', 'year', 'amount', 'image_url', 'status', 'created_at', 'updated_at'],
     });
   }
 
@@ -92,7 +89,6 @@ async function getSheet(title) {
   return doc.sheetsByTitle[title];
 }
 
-// row._sheet was a private property removed in v5; use sheet.headerValues instead
 function rowToObj(row, headers) {
   const obj = {};
   headers.forEach((h) => { obj[h] = row.get(h); });
@@ -106,10 +102,10 @@ async function wargaGetAll() {
   return rows.map((r) => rowToObj(r, sheet.headerValues));
 }
 
-async function wargaGetByUserId(userId) {
+async function wargaGetByPhone(phone) {
   const sheet = await getSheet(SHEET_TITLES.WARGA);
   const rows = await sheet.getRows();
-  const row = rows.find((r) => r.get('user_id') === String(userId));
+  const row = rows.find((r) => r.get('phone') === String(phone));
   return row ? rowToObj(row, sheet.headerValues) : null;
 }
 
@@ -120,22 +116,22 @@ async function wargaCreate(data) {
   });
 }
 
-async function wargaUpdate(userId, data) {
+async function wargaUpdate(phone, data) {
   return writeQueue.enqueue(async () => {
     const sheet = await getSheet(SHEET_TITLES.WARGA);
     const rows = await sheet.getRows();
-    const row = rows.find((r) => r.get('user_id') === String(userId));
+    const row = rows.find((r) => r.get('phone') === String(phone));
     if (!row) throw new Error('Warga not found in sheet');
     Object.entries(data).forEach(([k, v]) => row.set(k, v));
     await row.save();
   });
 }
 
-async function wargaDelete(userId) {
+async function wargaDelete(phone) {
   return writeQueue.enqueue(async () => {
     const sheet = await getSheet(SHEET_TITLES.WARGA);
     const rows = await sheet.getRows();
-    const row = rows.find((r) => r.get('user_id') === String(userId));
+    const row = rows.find((r) => r.get('phone') === String(phone));
     if (row) await row.delete();
   });
 }
@@ -147,11 +143,11 @@ async function paymentGetAll() {
   return rows.map((r) => rowToObj(r, sheet.headerValues));
 }
 
-async function paymentGetByUserId(userId) {
+async function paymentGetByPhone(phone) {
   const sheet = await getSheet(SHEET_TITLES.PAYMENTS);
   const rows = await sheet.getRows();
   return rows
-    .filter((r) => r.get('user_id') === String(userId))
+    .filter((r) => r.get('phone') === String(phone))
     .map((r) => rowToObj(r, sheet.headerValues));
 }
 
@@ -174,12 +170,12 @@ async function paymentUpdate(paymentId, data) {
   });
 }
 
-async function paymentFindByUserMonth(userId, month, year) {
+async function paymentFindByPhoneMonth(phone, month, year) {
   const sheet = await getSheet(SHEET_TITLES.PAYMENTS);
   const rows = await sheet.getRows();
   const row = rows.find(
     (r) =>
-      r.get('user_id') === String(userId) &&
+      r.get('phone') === String(phone) &&
       r.get('month') === String(month) &&
       r.get('year') === String(year)
   );
@@ -216,15 +212,15 @@ async function summaryGetAll() {
 module.exports = {
   getDoc,
   wargaGetAll,
-  wargaGetByUserId,
+  wargaGetByPhone,
   wargaCreate,
   wargaUpdate,
   wargaDelete,
   paymentGetAll,
-  paymentGetByUserId,
+  paymentGetByPhone,
   paymentCreate,
   paymentUpdate,
-  paymentFindByUserMonth,
+  paymentFindByPhoneMonth,
   summaryUpsert,
   summaryGetAll,
 };

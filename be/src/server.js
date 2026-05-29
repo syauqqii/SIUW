@@ -1,20 +1,11 @@
 require('dotenv').config();
 
-// Initialize DB on startup
-require('./config/db');
-
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
-const fs = require('fs');
 
 const authRoutes = require('./routes/auth');
 const wargaRoutes = require('./routes/warga');
 const paymentRoutes = require('./routes/payment');
-
-// Ensure data directory exists
-const dataDir = path.join(__dirname, '../data');
-if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
 const app = express();
 

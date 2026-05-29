@@ -18,9 +18,13 @@ export default function Login() {
     setError('');
     setLoading(true);
     try {
-      const payload = { role, password };
-      if (role === 'admin') payload.email = email;
-      else payload.phone = phone;
+      const payload = { role };
+      if (role === 'admin') {
+        payload.email = email;
+        payload.password = password;
+      } else {
+        payload.phone = phone;
+      }
 
       const user = await login(payload);
       navigate(user.role === 'admin' ? '/admin' : '/dashboard', { replace: true });
@@ -99,18 +103,20 @@ export default function Login() {
             </div>
           )}
 
-          <div>
-            <label className="input-label">Password</label>
-            <input
-              type="password"
-              className="input-field"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              autoComplete="current-password"
-              required
-            />
-          </div>
+          {role === 'admin' && (
+            <div>
+              <label className="input-label">Password</label>
+              <input
+                type="password"
+                className="input-field"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                autoComplete="current-password"
+                required
+              />
+            </div>
+          )}
 
           {error && (
             <p className="text-red-600 text-sm font-medium bg-red-50 px-4 py-3 rounded-lg">

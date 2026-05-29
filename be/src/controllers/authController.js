@@ -1,6 +1,15 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const db = require('../config/db');
+const fs = require('fs');
+const path = require('path');
+const sheets = require('../config/sheets');
+
+const CREDS_PATH = path.join(__dirname, '../../creds.json');
+
+function loadCreds() {
+  if (!fs.existsSync(CREDS_PATH)) return [];
+  return JSON.parse(fs.readFileSync(CREDS_PATH, 'utf8'));
+}
 
 async function login(req, res) {
   try {
@@ -9,37 +18,54 @@ async function login(req, res) {
     if (!role || !['admin', 'warga'].includes(role)) {
       return res.status(400).json({ error: 'Invalid role' });
     }
-    if (!password) {
-      return res.status(400).json({ error: 'Password required' });
-    }
 
-    let user;
     if (role === 'admin') {
-      if (!email) return res.status(400).json({ error: 'Email required for admin login' });
-      user = db.prepare('SELECT * FROM users WHERE email = ? AND role = ?').get(email, 'admin');
-    } else {
-      if (!phone) return res.status(400).json({ error: 'Phone required for warga login' });
-      user = db.prepare('SELECT * FROM users WHERE phone = ? AND role = ?').get(phone, 'warga');
+      if (!email || !password) {
+        return res.status(400).json({ error: 'Email and password required' });
+      }
+
+      const admins = loadCreds();
+      const admin = admins.find((a) => a.email === email);
+      if (!admin) {
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
+
+      const valid = await bcrypt.compare(password, admin.password_hash);
+      if (!valid) {
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
+
+      const token = jwt.sign(
+        { email: admin.email, role: 'admin' },
+        process.env.JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+
+      return res.json({
+        token,
+        user: { email: admin.email, role: 'admin' },
+      });
     }
 
-    if (!user) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+    // Warga — cukup nomor telepon
+    if (!phone) {
+      return res.status(400).json({ error: 'Phone required' });
     }
 
-    const valid = await bcrypt.compare(password, user.password_hash);
-    if (!valid) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+    const warga = await sheets.wargaGetByPhone(phone);
+    if (!warga) {
+      return res.status(401).json({ error: 'Nomor telepon tidak terdaftar' });
     }
 
     const token = jwt.sign(
-      { id: user.id, role: user.role, email: user.email, phone: user.phone, house_no: user.house_no },
+      { phone: warga.phone, role: 'warga', name: warga.name, house_no: warga.house_no },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
 
-    res.json({
+    return res.json({
       token,
-      user: { id: user.id, role: user.role, email: user.email, phone: user.phone, house_no: user.house_no },
+      user: { phone: warga.phone, role: 'warga', name: warga.name, house_no: warga.house_no },
     });
   } catch (err) {
     console.error('Login error:', err);

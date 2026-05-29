@@ -1,4 +1,3 @@
-const db = require('../config/db');
 const sheets = require('../config/sheets');
 const cloudinary = require('../config/cloudinary');
 
@@ -18,7 +17,7 @@ async function getPayments(req, res) {
       const all = await sheets.paymentGetAll();
       return res.json(all);
     }
-    const payments = await sheets.paymentGetByUserId(req.user.id);
+    const payments = await sheets.paymentGetByPhone(req.user.phone);
     res.json(payments);
   } catch (err) {
     console.error('getPayments error:', err);
@@ -30,6 +29,7 @@ async function getSummary(req, res) {
   try {
     const rows = await sheets.summaryGetAll();
     const allPayments = await sheets.paymentGetAll();
+    const allWarga = await sheets.wargaGetAll();
 
     const totalCollected = allPayments
       .filter((p) => p.status === 'approved')
@@ -39,7 +39,6 @@ async function getSummary(req, res) {
       .filter((p) => p.status === 'pending')
       .reduce((s, p) => s + Number(p.amount || 0), 0);
 
-    const allWarga = db.prepare("SELECT id FROM users WHERE role = 'warga'").all();
     const currentMonth = new Date().getMonth() + 1;
     const currentYear = new Date().getFullYear();
 
@@ -51,7 +50,7 @@ async function getSummary(req, res) {
             Number(p.month) === currentMonth &&
             Number(p.year) === currentYear
         )
-        .map((p) => p.user_id)
+        .map((p) => p.phone)
     );
 
     const totalUnpaid = allWarga.length - paidThisMonth.size;
@@ -75,7 +74,7 @@ async function getPendingApprovals(req, res) {
 
     const wargaRows = await sheets.wargaGetAll();
     const enriched = pending.map((p) => {
-      const info = wargaRows.find((w) => w.user_id === String(p.user_id)) || {};
+      const info = wargaRows.find((w) => w.phone === p.phone) || {};
       return { ...p, user_name: info.name || '', house_no: info.house_no || '' };
     });
 
@@ -89,7 +88,7 @@ async function getPendingApprovals(req, res) {
 async function createPayment(req, res) {
   try {
     const { month, year, amount } = req.body;
-    const userId = req.user.id;
+    const phone = req.user.phone;
 
     if (!month || !year || !amount) {
       return res.status(400).json({ error: 'month, year, and amount are required' });
@@ -98,7 +97,7 @@ async function createPayment(req, res) {
       return res.status(400).json({ error: 'Receipt image is required' });
     }
 
-    const existing = await sheets.paymentFindByUserMonth(userId, month, year);
+    const existing = await sheets.paymentFindByPhoneMonth(phone, month, year);
     if (existing && existing.status !== 'rejected') {
       return res.status(409).json({ error: 'Payment for this month already submitted' });
     }
@@ -108,7 +107,7 @@ async function createPayment(req, res) {
     const now = new Date().toISOString();
     const paymentData = {
       id: crypto.randomUUID(),
-      user_id: String(userId),
+      phone: String(phone),
       month: String(month),
       year: String(year),
       amount: String(amount),
@@ -152,20 +151,20 @@ async function updatePaymentStatus(req, res) {
 
 async function manualPaymentStatus(req, res) {
   try {
-    const { user_id, month, year, status, amount } = req.body;
+    const { phone, month, year, status, amount } = req.body;
 
-    if (!user_id || !month || !year || !status) {
-      return res.status(400).json({ error: 'user_id, month, year, status are required' });
+    if (!phone || !month || !year || !status) {
+      return res.status(400).json({ error: 'phone, month, year, status are required' });
     }
     if (!['paid', 'unpaid'].includes(status)) {
       return res.status(400).json({ error: 'Status must be paid or unpaid' });
     }
 
-    const user = db.prepare("SELECT * FROM users WHERE id = ? AND role = 'warga'").get(user_id);
-    if (!user) return res.status(404).json({ error: 'Warga not found' });
+    const warga = await sheets.wargaGetByPhone(phone);
+    if (!warga) return res.status(404).json({ error: 'Warga not found' });
 
     const now = new Date().toISOString();
-    const existing = await sheets.paymentFindByUserMonth(user_id, month, year);
+    const existing = await sheets.paymentFindByPhoneMonth(phone, month, year);
 
     if (status === 'paid') {
       if (existing) {
@@ -180,7 +179,7 @@ async function manualPaymentStatus(req, res) {
 
       const paymentData = {
         id: crypto.randomUUID(),
-        user_id: String(user_id),
+        phone: String(phone),
         month: String(month),
         year: String(year),
         amount: String(amount || 0),
@@ -214,7 +213,7 @@ async function manualPaymentStatus(req, res) {
 async function updateSummary(paymentData) {
   try {
     const wargaRows = await sheets.wargaGetAll();
-    const info = wargaRows.find((w) => w.user_id === String(paymentData.user_id)) || {};
+    const info = wargaRows.find((w) => w.phone === paymentData.phone) || {};
 
     await sheets.summaryUpsert(
       { house_no: info.house_no || '', month: paymentData.month, year: paymentData.year },

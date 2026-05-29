@@ -7,7 +7,7 @@ export default function UserManagement({ warga, loading, onRefresh }) {
   const [showForm, setShowForm] = useState(false);
   const [editTarget, setEditTarget] = useState(null);
   const [showManual, setShowManual] = useState(null);
-  const [form, setForm] = useState({ name: '', phone: '', house_no: '', password: '' });
+  const [form, setForm] = useState({ name: '', phone: '', house_no: '' });
   const [manualForm, setManualForm] = useState({ month: new Date().getMonth() + 1, year: new Date().getFullYear(), status: 'paid', amount: '' });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -15,14 +15,14 @@ export default function UserManagement({ warga, loading, onRefresh }) {
 
   function openAdd() {
     setEditTarget(null);
-    setForm({ name: '', phone: '', house_no: '', password: '' });
+    setForm({ name: '', phone: '', house_no: '' });
     setError('');
     setShowForm(true);
   }
 
   function openEdit(w) {
     setEditTarget(w);
-    setForm({ name: w.name || '', phone: w.phone || '', house_no: w.house_no || '', password: '' });
+    setForm({ name: w.name || '', phone: w.phone || '', house_no: w.house_no || '' });
     setError('');
     setShowForm(true);
   }
@@ -37,10 +37,9 @@ export default function UserManagement({ warga, loading, onRefresh }) {
         if (form.name) payload.name = form.name;
         if (form.phone) payload.phone = form.phone;
         if (form.house_no) payload.house_no = form.house_no;
-        if (form.password) payload.password = form.password;
-        await client.put(`/warga/${editTarget.id}`, payload);
+        await client.put(`/warga/${editTarget.phone}`, payload);
       } else {
-        await client.post('/warga', form);
+        await client.post('/warga', { name: form.name, phone: form.phone, house_no: form.house_no });
       }
       setShowForm(false);
       onRefresh();
@@ -51,10 +50,10 @@ export default function UserManagement({ warga, loading, onRefresh }) {
     }
   }
 
-  async function handleDelete(id) {
+  async function handleDelete(phone) {
     if (!confirm('Hapus warga ini?')) return;
     try {
-      await client.delete(`/warga/${id}`);
+      await client.delete(`/warga/${phone}`);
       onRefresh();
     } catch (err) {
       alert(err.response?.data?.error || 'Gagal menghapus');
@@ -67,7 +66,7 @@ export default function UserManagement({ warga, loading, onRefresh }) {
     setError('');
     try {
       await client.post('/payments/manual', {
-        user_id: showManual.id,
+        phone: showManual.phone,
         month: manualForm.month,
         year: manualForm.year,
         status: manualForm.status,
@@ -176,7 +175,7 @@ export default function UserManagement({ warga, loading, onRefresh }) {
                 </button>
                 <button
                   className="btn-danger text-xs px-3 py-2 min-h-0 h-9"
-                  onClick={() => handleDelete(w.id)}
+                  onClick={() => handleDelete(w.phone)}
                 >
                   Hapus
                 </button>
@@ -201,10 +200,6 @@ export default function UserManagement({ warga, loading, onRefresh }) {
             <div>
               <label className="input-label">Nomor Rumah</label>
               <input className="input-field" value={form.house_no} onChange={(e) => setForm({ ...form, house_no: e.target.value })} required={!editTarget} />
-            </div>
-            <div>
-              <label className="input-label">{editTarget ? 'Password Baru (kosongkan jika tidak diubah)' : 'Password'}</label>
-              <input className="input-field" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required={!editTarget} />
             </div>
             {error && <p className="text-red-600 text-sm bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
             <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Menyimpan...' : 'Simpan'}</button>

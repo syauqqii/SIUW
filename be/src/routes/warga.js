@@ -8,7 +8,7 @@ router.use(requireAuth, requireAdmin);
 
 router.get('/', getAllWarga);
 router.post('/', createWarga);
-router.put('/:id', updateWarga);
-router.delete('/:id', deleteWarga);
+router.put('/:phone', updateWarga);
+router.delete('/:phone', deleteWarga);
 
 module.exports = router;

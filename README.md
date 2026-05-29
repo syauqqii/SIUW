@@ -12,9 +12,10 @@ Panduan ini ditulis untuk pemula. Ikuti langkah demi langkah dari atas ke bawah.
 4. [Setup Google Cloud (Service Account)](#4-setup-google-cloud-service-account)
 5. [Setup Cloudinary](#5-setup-cloudinary)
 6. [Konfigurasi File .env](#6-konfigurasi-file-env)
-7. [Jalankan Backend](#7-jalankan-backend)
-8. [Jalankan Frontend](#8-jalankan-frontend)
-9. [Login Pertama Kali](#9-login-pertama-kali)
+7. [Setup Akun Admin](#7-setup-akun-admin)
+8. [Jalankan Backend](#8-jalankan-backend)
+9. [Jalankan Frontend](#9-jalankan-frontend)
+10. [Login Pertama Kali](#10-login-pertama-kali)
 
 ---
 
@@ -52,7 +53,7 @@ Jika belum, download dan extract folder `SIUW` ke lokasi yang mudah diakses, mis
 
 ## 3. Setup Google Sheet
 
-Google Sheet digunakan sebagai database operasional (data warga, pembayaran, dan rekap).
+Google Sheet digunakan sebagai satu-satunya database (data warga, pembayaran, dan rekap).
 
 ### 3.1 Buat Google Sheet baru
 
@@ -167,17 +168,50 @@ GOOGLE_PRIVATE_KEY="paste_private_key_dari_json_key_beserta_tanda_petiknya"
 CLOUDINARY_CLOUD_NAME=paste_cloud_name
 CLOUDINARY_API_KEY=paste_api_key
 CLOUDINARY_API_SECRET=paste_api_secret
-
-# Akun admin pertama
-ADMIN_EMAIL=admin@siuw.local
-ADMIN_PASSWORD=ganti_dengan_password_aman
 ```
 
 > **Penting untuk `GOOGLE_PRIVATE_KEY`:** Pastikan nilai private key diapit tanda kutip ganda `"..."` dan tuliskan persis seperti yang ada di file JSON, termasuk bagian `\n`-nya. Jangan hapus atau ubah apapun.
 
 ---
 
-## 7. Jalankan Backend
+## 7. Setup Akun Admin
+
+Akun admin disimpan di file `creds.json` di dalam folder `be`. File ini tidak ikut di-commit ke Git (aman).
+
+1. Masuk ke folder `be`:
+   ```bash
+   cd be
+   ```
+
+2. Install dependensi terlebih dahulu (jika belum):
+   ```bash
+   npm install
+   ```
+
+3. Tambahkan admin pertama:
+   ```bash
+   npm run setup-admin add admin@siuw.local passwordanda
+   ```
+   Ganti `admin@siuw.local` dan `passwordanda` sesuai keinginan.
+
+4. Untuk melihat daftar admin yang sudah terdaftar:
+   ```bash
+   npm run setup-admin list
+   ```
+
+5. Untuk menambah admin lagi (misal ada 2-3 admin):
+   ```bash
+   npm run setup-admin add admin2@siuw.local passwordlain
+   ```
+
+6. Untuk menghapus admin:
+   ```bash
+   npm run setup-admin remove admin@siuw.local
+   ```
+
+---
+
+## 8. Jalankan Backend
 
 Buka terminal / Command Prompt, lalu jalankan perintah berikut **satu per satu**:
 
@@ -187,9 +221,6 @@ cd be
 
 # Install semua dependensi (hanya perlu dilakukan sekali)
 npm install
-
-# Buat akun admin pertama (hanya perlu dilakukan sekali)
-npm run seed
 
 # Jalankan server backend
 npm run dev
@@ -204,7 +235,7 @@ SIUW backend running on port 3001
 
 ---
 
-## 8. Jalankan Frontend
+## 9. Jalankan Frontend
 
 Buka terminal / Command Prompt **baru** (jangan tutup yang lama), lalu:
 
@@ -228,19 +259,19 @@ Buka browser dan akses: **http://localhost:5173**
 
 ---
 
-## 9. Login Pertama Kali
+## 10. Login Pertama Kali
 
 ### Admin
 
 - Pilih tab **Admin** di halaman login
-- Email: sesuai `ADMIN_EMAIL` di file `.env` (default: `admin@siuw.local`)
-- Password: sesuai `ADMIN_PASSWORD` di file `.env`
+- Email: sesuai yang didaftarkan di langkah 7
+- Password: sesuai yang didaftarkan di langkah 7
 
 ### Warga
 
-- Warga hanya bisa login setelah admin menambahkan akunnya terlebih dahulu
-- Admin membuat akun warga lewat menu **Data Warga** → **Tambah Warga**
-- Warga login menggunakan **nomor telepon** + password yang ditetapkan admin
+- Warga hanya bisa login setelah admin menambahkan datanya terlebih dahulu
+- Admin menambahkan warga lewat menu **Data Warga** → **Tambah Warga** (cukup nama, nomor telepon, dan nomor rumah)
+- Warga login menggunakan **nomor telepon** yang terdaftar — tanpa password
 
 ---
 
@@ -252,7 +283,7 @@ Saat backend pertama kali berjalan dan terhubung ke Google Sheet, tiga tab berik
 
 | Tab | Isi |
 |-----|-----|
-| Warga Info | Data profil warga |
+| Warga Info | Data profil warga (id, phone, name, house_no) |
 | Payments | Riwayat semua pembayaran |
 | Payment Summary | Rekap status per warga per bulan |
 
@@ -264,7 +295,7 @@ Tekan `Ctrl + C` di masing-masing terminal (backend dan frontend) untuk menghent
 
 ### Menjalankan Ulang
 
-Cukup ulangi langkah 7 dan 8 tanpa perlu `npm install` atau `npm run seed` lagi.
+Cukup ulangi langkah 8 dan 9 tanpa perlu `npm install` atau setup ulang.
 
 ---
 
@@ -275,8 +306,8 @@ Cukup ulangi langkah 7 dan 8 tanpa perlu `npm install` atau `npm run seed` lagi.
 | POST | `/api/auth/login` | Semua | Login |
 | GET | `/api/warga` | Admin | Daftar warga |
 | POST | `/api/warga` | Admin | Tambah warga |
-| PUT | `/api/warga/:id` | Admin | Edit warga |
-| DELETE | `/api/warga/:id` | Admin | Hapus warga |
+| PUT | `/api/warga/:phone` | Admin | Edit warga |
+| DELETE | `/api/warga/:phone` | Admin | Hapus warga |
 | GET | `/api/payments` | Login | Riwayat pembayaran |
 | POST | `/api/payments` | Warga | Upload bukti bayar |
 | GET | `/api/payments/summary` | Admin | Ringkasan & total |
