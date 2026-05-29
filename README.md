@@ -299,6 +299,75 @@ Cukup ulangi langkah 8 dan 9 tanpa perlu `npm install` atau setup ulang.
 
 ---
 
+## Deploy ke Internet (Gratis)
+
+Keduanya bisa deploy di **Vercel** secara gratis — sebagai dua project terpisah dari repo yang sama.
+
+> **Catatan:** Backend berjalan sebagai Vercel Serverless Function. Tidak ada *sleep* seperti Render, tapi ada *cold start* ~1-2 detik pada request pertama setelah lama tidak diakses.
+
+---
+
+### Langkah 1 — Siapkan `ADMIN_CREDS`
+
+Karena `creds.json` tidak di-commit ke Git, admin harus disimpan sebagai environment variable. Generate hash password di lokal dulu:
+
+```bash
+cd be && node -e "const b=require('bcryptjs');b.hash('passwordmu',10).then(h=>console.log(JSON.stringify([{email:'admin@siuw.local',password_hash:h}])))"
+```
+
+Salin output JSON-nya (bentuk `[{"email":"...","password_hash":"$2a$10$..."}]`). Ini akan dipakai di langkah berikutnya.
+
+---
+
+### Langkah 2 — Deploy Backend ke Vercel
+
+1. Buka [vercel.com](https://vercel.com) → **Add New Project** → hubungkan repo GitHub
+2. Set **Root Directory** → `be`
+3. **Framework Preset** → pilih **Other**
+4. Biarkan Build & Output Settings kosong (sudah diatur via `vercel.json`)
+5. Buka **Environment Variables**, tambahkan semua ini:
+
+   | Nama | Nilai |
+   |------|-------|
+   | `FRONTEND_URL` | `https://nama-frontend-kamu.vercel.app` *(isi setelah deploy frontend)* |
+   | `JWT_SECRET` | teks acak panjang |
+   | `GOOGLE_SHEET_ID` | sheet ID dari langkah 3 |
+   | `GOOGLE_SERVICE_ACCOUNT_EMAIL` | client_email dari JSON key |
+   | `GOOGLE_PRIVATE_KEY` | private_key dari JSON key (beserta `\n`-nya) |
+   | `CLOUDINARY_CLOUD_NAME` | cloud name Cloudinary |
+   | `CLOUDINARY_API_KEY` | API key Cloudinary |
+   | `CLOUDINARY_API_SECRET` | API secret Cloudinary |
+   | `ADMIN_CREDS` | output JSON dari Langkah 1 |
+
+6. Klik **Deploy** — tunggu hingga selesai
+7. Catat URL backend, contoh: `https://siuw-be.vercel.app`
+
+---
+
+### Langkah 3 — Deploy Frontend ke Vercel
+
+1. Di Vercel → **Add New Project** → hubungkan repo GitHub yang sama
+2. Set **Root Directory** → `fe`
+3. **Framework Preset** → **Vite** (biasanya terdeteksi otomatis)
+4. Tambahkan **Environment Variable:**
+
+   | Nama | Nilai |
+   |------|-------|
+   | `VITE_API_URL` | `https://siuw-be.vercel.app/api` *(URL backend dari Langkah 2)* |
+
+5. Klik **Deploy** — selesai
+
+---
+
+### Langkah 4 — Update FRONTEND_URL di Backend
+
+Setelah frontend live, kembali ke project backend di Vercel:
+1. **Settings** → **Environment Variables**
+2. Update `FRONTEND_URL` dengan URL frontend yang sudah live
+3. **Redeploy** backend agar CORS-nya benar
+
+---
+
 ## Ringkasan API Endpoints
 
 | Method | Path | Akses | Fungsi |

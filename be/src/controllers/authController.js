@@ -8,8 +8,13 @@ const { normalizePhone } = require('../utils/phone');
 const CREDS_PATH = path.join(__dirname, '../../creds.json');
 
 function loadCreds() {
-  if (!fs.existsSync(CREDS_PATH)) return [];
-  return JSON.parse(fs.readFileSync(CREDS_PATH, 'utf8'));
+  if (fs.existsSync(CREDS_PATH)) {
+    return JSON.parse(fs.readFileSync(CREDS_PATH, 'utf8'));
+  }
+  if (process.env.ADMIN_CREDS) {
+    return JSON.parse(process.env.ADMIN_CREDS);
+  }
+  return [];
 }
 
 async function login(req, res) {
