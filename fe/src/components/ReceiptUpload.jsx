@@ -2,9 +2,27 @@ import { useState, useRef } from 'react';
 import client from '../api/client';
 
 const MONTHS = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+const MAX_SIZE = 5 * 1024 * 1024; // 5MB
 
 const fmt = (n) =>
   new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
+
+function checkImageMagicBytes(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = (e) => {
+      const b = new Uint8Array(e.target.result);
+      const isJpeg = b[0] === 0xFF && b[1] === 0xD8 && b[2] === 0xFF;
+      const isPng = b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4E && b[3] === 0x47;
+      const isGif = b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x38;
+      const isWebp = b.length >= 12 && b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46
+        && b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50;
+      const isBmp = b[0] === 0x42 && b[1] === 0x4D;
+      resolve(isJpeg || isPng || isGif || isWebp || isBmp);
+    };
+    reader.readAsArrayBuffer(file.slice(0, 12));
+  });
+}
 
 export default function ReceiptUpload({ onSuccess }) {
   const now = new Date();
@@ -18,16 +36,31 @@ export default function ReceiptUpload({ onSuccess }) {
   const [error, setError] = useState('');
   const fileRef = useRef();
 
-  function handleFileChange(e) {
+  async function handleFileChange(e) {
     const f = e.target.files[0];
     if (!f) return;
+
+    if (f.size > MAX_SIZE) {
+      setError('Ukuran file maksimal 5MB');
+      fileRef.current.value = '';
+      return;
+    }
+
+    const valid = await checkImageMagicBytes(f);
+    if (!valid) {
+      setError('File bukan gambar yang valid (JPG, PNG, GIF, WebP)');
+      fileRef.current.value = '';
+      return;
+    }
+
+    setError('');
     setFile(f);
     setPreview(URL.createObjectURL(f));
   }
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!file) { setError('Pilih foto bukti pembayaran'); return; }
+    if (!file) { setError('Pilih gambar bukti pembayaran'); return; }
     if (!amount) { setError('Masukkan jumlah pembayaran'); return; }
 
     setLoading(true);
@@ -108,12 +141,11 @@ export default function ReceiptUpload({ onSuccess }) {
       </div>
 
       <div>
-        <label className="input-label">Foto Bukti Pembayaran</label>
+        <label className="input-label">Bukti Pembayaran</label>
         <input
           ref={fileRef}
           type="file"
           accept="image/*"
-          capture="environment"
           className="hidden"
           onChange={handleFileChange}
         />
@@ -131,7 +163,8 @@ export default function ReceiptUpload({ onSuccess }) {
                   d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
-              <span className="text-sm">Ambil Foto / Pilih Gambar</span>
+              <span className="text-sm font-medium">Pilih Gambar / Ambil Foto</span>
+              <span className="text-xs text-gray-300">JPG, PNG, WebP · Maks 5MB</span>
             </>
           )}
         </button>
