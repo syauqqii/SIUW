@@ -1,5 +1,6 @@
 const sheets = require('../config/sheets');
 const cloudinary = require('../config/cloudinary');
+const { isValidImageBuffer } = require('../middleware/upload');
 
 function uploadToCloudinary(buffer) {
   return new Promise((resolve, reject) => {
@@ -95,6 +96,9 @@ async function createPayment(req, res) {
     }
     if (!req.file) {
       return res.status(400).json({ error: 'Receipt image is required' });
+    }
+    if (!isValidImageBuffer(req.file.buffer)) {
+      return res.status(400).json({ error: 'File bukan gambar yang valid' });
     }
 
     const existing = await sheets.paymentFindByPhoneMonth(phone, month, year);
